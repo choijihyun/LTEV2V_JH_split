@@ -71,30 +71,6 @@ end
 % print
 if ~simParams.printLOG
     [~, sortedXVehiclesIndex] = sort(simValues.XvehicleReal);
-    % rate control
-    outFile3 = fopen(sprintf("./ITTpercent_%d/ITTHistory_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_rate.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT),'a');
-    outFile4 = fopen(sprintf("./ITTpercent_%d/BRpassCounter_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_rate.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT),'a');
-    for  i = powerVehicle+1 :length(timeNextPacket)
-        fprintf(outFile3, '%f\t',  ITT(sortedXVehiclesIndex(i)));
-        fprintf(outFile4, '%d\t',  BRpassCounter(sortedXVehiclesIndex(i)));
-    end
-    fprintf(outFile3, '\n');
-    fprintf(outFile4, '\n');
-    fclose(outFile3);
-    fclose(outFile4);
-    
-    % power control
-    outFile3 = fopen(sprintf("./ITTpercent_%d/ITTHistory_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_power.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT),'a');
-    outFile4 = fopen(sprintf("./ITTpercent_%d/BRpassCounter_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_power.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT),'a');
-    for  i = 1 :powerVehicle
-        fprintf(outFile3, '%f\t',  ITT(sortedXVehiclesIndex(i)));
-        fprintf(outFile4, '%d\t',  BRpassCounter(sortedXVehiclesIndex(i)));
-    end
-    fprintf(outFile3, '\n');
-    fprintf(outFile4, '\n');
-    fclose(outFile3);
-    fclose(outFile4);
-    
     %total
     outFile3 = fopen(sprintf("./ITTpercent_%d/ITTHistory_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT),'a');
     outFile4 = fopen(sprintf("./ITTpercent_%d/BRpassCounter_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT),'a');
@@ -115,6 +91,36 @@ if ~simParams.printLOG
     end
     fprintf(outFile3, '\n');
     fprintf(outFile4, '\n');
+    
+    % rate control
+    index = find(simValues.IDvehicle>powerVehicle);
+    [~, sortedXVehiclesIndex] = sort(simValues.XvehicleReal(index));
+    outFile3 = fopen(sprintf("./ITTpercent_%d/ITTHistory_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_rate.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT),'a');
+    outFile4 = fopen(sprintf("./ITTpercent_%d/BRpassCounter_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_rate.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT),'a');
+    for  i = powerVehicle+1 :length(timeNextPacket)
+        fprintf(outFile3, '%f\t',  ITT(sortedXVehiclesIndex(i)));
+        fprintf(outFile4, '%d\t',  BRpassCounter(sortedXVehiclesIndex(i)));
+    end
+    fprintf(outFile3, '\n');
+    fprintf(outFile4, '\n');
+    fclose(outFile3);
+    fclose(outFile4);
+    
+    % power control
+    index2 = find(simValues.IDvehicle<=powerVehicle);
+    [~, sortedXVehiclesIndex] = sort(simValues.XvehicleReal(index2));
+    outFile3 = fopen(sprintf("./ITTpercent_%d/ITTHistory_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_power.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT),'a');
+    outFile4 = fopen(sprintf("./ITTpercent_%d/BRpassCounter_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_power.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT),'a');
+    for  i = 1 :powerVehicle
+        fprintf(outFile3, '%f\t',  ITT(sortedXVehiclesIndex(i)));
+        fprintf(outFile4, '%d\t',  BRpassCounter(sortedXVehiclesIndex(i)));
+    end
+    fprintf(outFile3, '\n');
+    fprintf(outFile4, '\n');
+    fclose(outFile3);
+    fclose(outFile4);
+    
+    
     
 end
 

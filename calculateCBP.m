@@ -30,16 +30,16 @@ TransmitFlag(BRid==-1)=2;
 
 % find nodes that transmit in this snap
 [reservedNodes] = find(BRid>0);
-for i=1:length(reservedNodes)   
+for i=1:length(reservedNodes)
     RXpowerSum(:,BRid(reservedNodes(i))) = RXpowerSum(:,BRid(reservedNodes(i))) + RXpower(reservedNodes(i),:)';
     %jihyun - in same subframe, two subchannel affect each other with 0.0035
     % Find total received power using IBE
     IBE = IBEmatrix(1,2);
     if BRid(reservedNodes(i)) > 100
-%         RXpowerSum(reservedNodes(i),BRid(reservedNodes(i)) - 100) =  RXpower(reservedNodes(i),reservedNodes(i));
+        %         RXpowerSum(reservedNodes(i),BRid(reservedNodes(i)) - 100) =  RXpower(reservedNodes(i),reservedNodes(i));
         RXpowerSum(:,BRid(reservedNodes(i))-100) = RXpowerSum(:,BRid(reservedNodes(i))-100) + RXpower(reservedNodes(i),:)'*IBE;
     else
-%         RXpowerSum(reservedNodes(i),BRid(reservedNodes(i)) + 100) =  RXpower(reservedNodes(i),reservedNodes(i));
+        %         RXpowerSum(reservedNodes(i),BRid(reservedNodes(i)) + 100) =  RXpower(reservedNodes(i),reservedNodes(i));
         RXpowerSum(:,BRid(reservedNodes(i)) + 100) =  RXpowerSum(:,BRid(reservedNodes(i)) + 100)+ RXpower(reservedNodes(i),:)'*IBE;
     end
 end
@@ -55,27 +55,27 @@ RXpowerHist(:, Nbeacons*10+1:Nbeacons*11) = RXpowerSum;
 % Calculate the beacon resources used in the time and frequency domains
 % Find not assigned BRid(BRidFake maintain value of BRid when passcounter~=0(BRid==-2))
 NOT = BRidFake<0;
-% Calculate BRidT = BRid 
+% Calculate BRidT = BRid
 BRidTT = BRidFake;
 BRidTT(NOT) = -1;
 
 IDlength = length(IDvehicle);
 if snap < 3
-    % rawCBP 
+    % rawCBP
     CBPMatrix(:,snap) = sum(RXpowerSum > CBPThresh,2) / (NbeaconsT*NbeaconsF);
 else
     for i=1:IDlength
         if BRidTT(i) == -1
-%             for not assigned BRid
+            %             for not assigned BRid
             CBPMatrix(i,snap) = sum(RXpowerHist( i , Nbeacons* 10+1 : (Nbeacons*11)) > CBPThresh,2) / (NbeaconsT*NbeaconsF);
         else
-%             Raw CBP calculate
+            %             Raw CBP calculate
             CBPMatrix(i,snap) = sum(RXpowerHist( i ,( Nbeacons*10+BRidTT(i) - (Nbeacons) +1) : ( Nbeacons*10+BRidTT(i) )) > CBPThresh,2) / (NbeaconsT*NbeaconsF);
         end
     end
 end
 
-% update CBPMatrixHistory for next snap calculate 
+% update CBPMatrixHistory for next snap calculate
 % CBPMatrix: Calculated, CBPMatrixHist: RawCBP
 CBPMatrixHist(:, snap) = CBPMatrix(:, snap);
 
@@ -94,13 +94,13 @@ end
 % CBPMatrix(:,snap) = sum(RXpowerHist(:,Nbeacons * (max(11-snap, 9)) + 1 : (Nbeacons*11)) > CBPThresh,2) / (NbeaconsT*NbeaconsF*min(snap,2));
 
 
-%total
-[~, sortedXVehiclesIndex] = sort(simValues.XvehicleReal);
+
 
 %% print
 if ~printLOG
-    % total
-    outFile = fopen(sprintf("./ITTpercent_%d/CBPHistory_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT),'a'); 
+    %total
+    [~, sortedXVehiclesIndex] = sort(simValues.XvehicleReal);
+    outFile = fopen(sprintf("./ITTpercent_%d/CBPHistory_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT),'a');
     for i = 1:length(CBPMatrix(:,snap))
         fprintf(outFile, '%f\t',  CBPMatrix(sortedXVehiclesIndex(i),snap));
     end
@@ -131,7 +131,7 @@ if ~printLOG
     fprintf(outFile, '\n');
     fclose(outFile);
     
-    %% for rate and power vehicle's cbp 
+    %% for rate and power vehicle's cbp
     %log for smoothing cbp
     %power control vehicle cbp
     outFile = fopen(sprintf("./ITTpercent_%d/CBPHistory_Raw%d_VDrange%d_rho%d_MCS%d_%d_power.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT),'a');
@@ -139,11 +139,13 @@ if ~printLOG
         fprintf(outFile, '%f\t',  CBPMatrix(i,snap));
     end
     fprintf(outFile, '\n');
-    fclose(outFile);    
+    fclose(outFile);
     
-    outFile = fopen(sprintf("./ITTpercent_%d/CBPHistory_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_power.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT),'a'); 
+    index = find(simValues.IDvehicle<=powerVehicle);
+    [~, sortedXVehiclesIndex2] = sort(simValues.XvehicleReal(index));
+    outFile = fopen(sprintf("./ITTpercent_%d/CBPHistory_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_power.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT),'a');
     for i = 1:powerVehicle
-        fprintf(outFile, '%f\t',  CBPMatrix(sortedXVehiclesIndex(i),snap));
+        fprintf(outFile, '%f\t',  CBPMatrix(sortedXVehiclesIndex2(i),snap));
     end
     fprintf(outFile, '\n');
     fclose(outFile);
@@ -154,39 +156,41 @@ if ~printLOG
         fprintf(outFile, '%f\t',  CBPMatrix(i,snap));
     end
     fprintf(outFile, '\n');
-    fclose(outFile);    
+    fclose(outFile);
     
-    outFile = fopen(sprintf("./ITTpercent_%d/CBPHistory_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_rate.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT),'a'); 
+    index2 = find(simValues.IDvehicle>powerVehicle);
+    [~, sortedXVehiclesIndex3] = sort(simValues.XvehicleReal(index2));
+    outFile = fopen(sprintf("./ITTpercent_%d/CBPHistory_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_rate.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT),'a');
     for i = powerVehicle+1:length(CBPMatrix(:,snap))
-        fprintf(outFile, '%f\t',  CBPMatrix(sortedXVehiclesIndex(i),snap));
+        fprintf(outFile, '%f\t',  CBPMatrix(sortedXVehiclesIndex3(i),snap));
     end
     fprintf(outFile, '\n');
     fclose(outFile);
     
     
     %% for detail logging such as BRid status
-    outFile = fopen(sprintf("./ITTpercent_%d/TrackBRid_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT),'a');
+    outFile = fopen(sprintf("./ITTpercent_%d/TrackBRid_Raw%d_VDrange%d_rho%d_MCS%d_%d.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT),'a');
     for i = 1:length(BRid)
         fprintf(outFile, '%d\t',  BRid(i));
     end
     fprintf(outFile, '\n');
     fclose(outFile);
     
-    outFile = fopen(sprintf("./ITTpercent_%d/TrackBRidFake_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT),'a');
+    outFile = fopen(sprintf("./ITTpercent_%d/TrackBRidFake_Raw%d_VDrange%d_rho%d_MCS%d_%d.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT),'a');
     for i = 1:length(BRidFake)
         fprintf(outFile, '%d\t',  BRidFake(i));
     end
     fprintf(outFile, '\n');
-    fclose(outFile);    
+    fclose(outFile);
     
-    outFile = fopen(sprintf("./ITTpercent_%d/BRid_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT),'a');
+    outFile = fopen(sprintf("./ITTpercent_%d/BRid_Raw%d_VDrange%d_rho%d_MCS%d_%d.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT),'a');
     for i = 1:length(arr)
         fprintf(outFile, '%d\t',  arr(i));
     end
     fprintf(outFile, '\n');
     fclose(outFile);
     
-    outFile = fopen(sprintf("./ITTpercent_%d/nonUsed_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT),'a');
+    outFile = fopen(sprintf("./ITTpercent_%d/nonUsed_Raw%d_VDrange%d_rho%d_MCS%d_%d.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT),'a');
     for i = 1:length(nonUsed)
         fprintf(outFile, '%d\t',  nonUsed(i));
     end
