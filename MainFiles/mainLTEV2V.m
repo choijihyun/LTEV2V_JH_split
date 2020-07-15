@@ -90,11 +90,29 @@ totalUse = zeros(200, 1);
 
 % sumOfUpdateDelayForDistance = zeros(simParams.roadLength/10,1);
 % numOfUpdateForDistance = ones(simParams.roadLength/10,1);
+%IA
 sumOfUpdateDelayForDistance = zeros(60,1);
 numOfUpdateForDistance = ones(60,1);
 
+%for rate control
+RatesumOfUpdateDelayForDistance = zeros(60,1);
+RatenumOfUpdateForDistance = ones(60,1);
+
+%for power control
+PowersumOfUpdateDelayForDistance = zeros(60,1);
+PowernumOfUpdateForDistance = ones(60,1);
+
+%PDR
 numOfTx = ones(simParams.roadLength/10,1);
 numOfRx = ones(simParams.roadLength/10,1);
+
+%for rate control
+RatenumOfTx = ones(simParams.roadLength/10,1);
+RatenumOfRx = ones(simParams.roadLength/10,1);
+
+%for power control
+PowernumOfTx = ones(simParams.roadLength/10,1);
+PowernumOfRx = ones(simParams.roadLength/10,1);
 
 NerrorHist = -2*ones(1000,1);
 BLERHist = -2*ones(1000 * 605,2);
@@ -102,7 +120,7 @@ windowForUniqueVehicle = zeros(simValues.maxID, simValues.maxID-1, 10);
 %slopeDefault = 0.5 / (25 * 6 - 25);
 % change slopeDefault based on ITT on VD to CBP
 
-%% ITT watermark & default slope
+%% ITT watermark & default slope- jihyun
 % ITT_y = 0.1;
 % ITT_x = 0.03;
 ITT_y = 0.3;
@@ -110,6 +128,17 @@ ITT_x = 0.1;
 slopeDefault = (ITT_y - ITT_x) / (0.8 - 0.5);
 %%%%%%%%%%%5
 
+%% number of power control and rate control - jihyun
+% ratio of control 
+powerRatio = 0.5;
+rateRatio = 0.5;
+
+% each number of power control and rate control
+powerVehicle = simValues.maxID*powerRatio;
+rateVehicle = simValues.maxID*rateRatio;
+
+
+%% BRreassignment by BRAlgorithm
 if simParams.BRAlgorithm==101
     % Call Benchmark Algorithm 101 (RANDOM ALLOCATION)
     [BRid] = BRreassignmentRandom(simValues.IDvehicle,BRid,appParams.Nbeacons,indexNoBorder);
@@ -355,22 +384,34 @@ for snap = 1:simValues.snapshots
         neighborsID, allNeighborsID, BRid, snap, simValues.RXpowerSum, CBPThresh, appParams,...
         simValues.RXpowerHist,...
         appParams.Nbeacons, appParams.NbeaconsF, simParams.CBRRange,...
-        timeNextPacket, elapsedTime, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent, simParams.printLOG, BRidFake, phyParams.IBEmatrix, phyParams.PnRB, TransmitFlag, distanceReal, totalUse);
+        timeNextPacket, elapsedTime, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent, simParams.printLOG, BRidFake, phyParams.IBEmatrix, phyParams.PnRB, TransmitFlag, distanceReal, totalUse, powerVehicle, rateVehicle);
     if simParams.powerControl
-        % calculate each vehicle's TxPower
-        phyParams = computeTransmissionPowerforNext(simValues, phyParams, simValues.CBPMatrix(:, snap), snap, simParams.rho, phyParams.smoothingFactorForITT, simParams.ITTpercent, simParams.printLOG);
+        % calculate only power vehicle's TxPower
+        phyParams = computeTransmissionPowerforNext(simValues, phyParams, simValues.CBPMatrix(:, snap), snap, simParams.rho, phyParams.smoothingFactorForITT, simParams.ITTpercent, simParams.printLOG, powerVehicle);
         
-        phyParams.Ptx_dBm_RB_Hist(:, snap) = phyParams.Ptx_dBm_RB;
-        phyParams.Ptx_RB =  10.^((phyParams.Ptx_dBm_RB-30)/10);
-        % Compute radiated power per RB -두 파일의 초기화 과정을 따라서 per RB 도출
+        %for calculate only for power control vehicle
+        index = find(simValues.IDvehicle <= powerVehicle);
+        phyParams.Ptx_dBm_RB_Hist(index, snap) = phyParams.Ptx_dBm_RB(index);
+        phyParams.Ptx_RB(index, : ) =  10.^((phyParams.Ptx_dBm_RB(index)-30)/10);
+        % Compute radiated power per RB - 두 파일의 초기화 과정을 따라서 per RB 도출
         % initiatePhyParameters.m
-        % effective radiated power(dBm)
-        phyParams.PtxERP_RB_dBm = phyParams.Ptx_dBm_RB + phyParams.Gt_dB;
-        phyParams.PtxERP_RB = 10.^((phyParams.PtxERP_RB_dBm-30)/10);
+        phyParams.PtxERP_RB_dBm(index, : ) = phyParams.Ptx_dBm_RB(index) + phyParams.Gt_dB;
+        phyParams.PtxERP_RB(index) = 10.^((phyParams.PtxERP_RB_dBm(index)-30)/10);
+        % deriveBeaconResources.m
+        phyParams.PtxERP_RB(index) = phyParams.PtxERP_RB(index)/(appParams.RBsBeacon/2);
+        phyParams.PtxERP_RB_dBm(index) = 10*log10(phyParams.PtxERP_RB(index))+30;
         
-        % deriveBeaconResources.m - Rxpower calculate with PtxERP_RB
-        phyParams.PtxERP_RB = phyParams.PtxERP_RB/(appParams.RBsBeacon/2);
-        phyParams.PtxERP_RB_dBm = 10*log10(phyParams.PtxERP_RB)+30;
+%         phyParams.Ptx_dBm_RB_Hist(:, snap) = phyParams.Ptx_dBm_RB;
+%         phyParams.Ptx_RB =  10.^((phyParams.Ptx_dBm_RB-30)/10);
+%         % Compute radiated power per RB -두 파일의 초기화 과정을 따라서 per RB 도출
+%         % initiatePhyParameters.m
+%         % effective radiated power(dBm)
+%         phyParams.PtxERP_RB_dBm = phyParams.Ptx_dBm_RB + phyParams.Gt_dB;
+%         phyParams.PtxERP_RB = 10.^((phyParams.PtxERP_RB_dBm-30)/10);
+%         
+%         % deriveBeaconResources.m - Rxpower calculate with PtxERP_RB
+%         phyParams.PtxERP_RB = phyParams.PtxERP_RB/(appParams.RBsBeacon/2);
+%         phyParams.PtxERP_RB_dBm = 10*log10(phyParams.PtxERP_RB)+30;
         
     end
     
@@ -414,8 +455,11 @@ for snap = 1:simValues.snapshots
     %     end
     if outParams.printUpdateDelay
         if elapsedTime >= 3.0
-            [simValues.updateTimeMatrix,outputValues.updateDelayCounter, sumOfUpdateDelayForDistance, numOfUpdateForDistance, numOfTx, numOfRx, windowForUniqueVehicle]...
-                = countUpdateDelay(simValues.IDvehicle,BRid,appParams.NbeaconsT,awarenessID,errorMatrix,elapsedTime,simValues.updateTimeMatrix,outputValues.updateDelayCounter,outParams.delayResolution, sumOfUpdateDelayForDistance, numOfUpdateForDistance, numOfTx, numOfRx, simValues.Xvehicle, simValues.Yvehicle, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.printLOG, simParams.ITTpercent, windowForUniqueVehicle);
+            [simValues.updateTimeMatrix,outputValues.updateDelayCounter, sumOfUpdateDelayForDistance, numOfUpdateForDistance, numOfTx, numOfRx, windowForUniqueVehicle,...
+                RatenumOfTx, RatenumOfRx, PowernumOfTx, PowernumOfRx, RatesumOfUpdateDelayForDistance, RatenumOfUpdateForDistance, PowersumOfUpdateDelayForDistance, PowernumOfUpdateForDistance]...
+                = countUpdateDelay(simValues.IDvehicle,BRid,appParams.NbeaconsT,awarenessID,errorMatrix,elapsedTime,simValues.updateTimeMatrix,outputValues.updateDelayCounter,outParams.delayResolution, ...
+                sumOfUpdateDelayForDistance, numOfUpdateForDistance, numOfTx, numOfRx, simValues.Xvehicle, simValues.Yvehicle, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.printLOG, simParams.ITTpercent, windowForUniqueVehicle, powerVehicle, ...
+                RatenumOfTx, RatenumOfRx, PowernumOfTx, PowernumOfRx, RatesumOfUpdateDelayForDistance, RatenumOfUpdateForDistance, PowersumOfUpdateDelayForDistance, PowernumOfUpdateForDistance);
         end
     end
     
@@ -448,10 +492,10 @@ for snap = 1:simValues.snapshots
     
     %% Update time next packet and rate control
     if simParams.rateControl
-        [BRid, BRpassCounter, BRidAfterPass, BRidFake ,timeNextPacket, ITT] = computeBRforNext(simValues, phyParams, simValues.CBPMatrix(:, snap), snap, simParams.rho, phyParams.smoothingFactorForITT, simParams.ITTpercent, simParams.printLOG, slopeDefault, ITT, ITT_x, ITT_y, BRid, BRpassCounter, BRidAfterPass, timeNextPacket, elapsedTime, simParams, appParams, BRidFake);
+        [BRid, BRpassCounter, BRidAfterPass, BRidFake ,timeNextPacket, ITT] = computeBRforNext(simValues, phyParams, simValues.CBPMatrix(:, snap), snap, simParams.rho, phyParams.smoothingFactorForITT, simParams.ITTpercent, simParams.printLOG, slopeDefault, ITT, ITT_x, ITT_y, BRid, BRpassCounter, BRidAfterPass, timeNextPacket, elapsedTime, simParams, appParams, BRidFake, powerVehicle);
     else
         % for only PowerControl - which is exactly moved 0.1
-        timeNextPacket = timeNextPacket + appParams.Tbeacon;
+%         timeNextPacket = timeNextPacket + appParams.Tbeacon;
     end
     
     %% Radio Resources Reassignment

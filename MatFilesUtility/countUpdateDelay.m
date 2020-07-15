@@ -1,6 +1,8 @@
-function [updateTimeMatrix,updateDelayCounter, sumOfUpdateDelayForDistance, numOfUpdateForDistance, numOfTx, numOfRx, windowForUniqueVehicle]...
+function [updateTimeMatrix,updateDelayCounter, sumOfUpdateDelayForDistance, numOfUpdateForDistance, numOfTx, numOfRx, windowForUniqueVehicle,...
+    RatenumOfTx, RatenumOfRx, PowernumOfTx, PowernumOfRx, RatesumOfUpdateDelayForDistance, RatenumOfUpdateForDistance, PowersumOfUpdateDelayForDistance, PowernumOfUpdateForDistance]...
     = countUpdateDelay(IDvehicle,BRid,NbeaconsT,awarenessID,errorMatrix,elapsedTime,updateTimeMatrix,updateDelayCounter,delayResolution, ...
-    sumOfUpdateDelayForDistance, numOfUpdateForDistance, numOfTx, numOfRx, Xvehicle, Yvehicle, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT, printLOG, ITTpercent, windowForUniqueVehicle)
+    sumOfUpdateDelayForDistance, numOfUpdateForDistance, numOfTx, numOfRx, Xvehicle, Yvehicle, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT, printLOG, ITTpercent, windowForUniqueVehicle, powerVehicle,...
+    RatenumOfTx, RatenumOfRx, PowernumOfTx, PowernumOfRx, RatesumOfUpdateDelayForDistance, RatenumOfUpdateForDistance, PowersumOfUpdateDelayForDistance, PowernumOfUpdateForDistance)
 % Function to compute the update delay between received beacons
 % Returns the updated updateTimeMatrix and updateDelayCounter
 
@@ -31,11 +33,18 @@ inverseOfSampleRate = round(length(Xvehicle)/50);   % ?‘œë³? 50??(border ? œ?™¸?
 % inverseOfSampleRate = round(length(Xvehicle)/100);   % ?‘œë³? 100??(border ? œ?™¸?•˜ë©? ?” ? ì§?..?„ˆë¬? ?˜¤?ž˜ê±¸ë ¤?„œ ?–´ì©? ?ˆ˜ ?—†?Œ)
 % end
 
-% jihyun - for rate control vehicles
+% jihyun - for total logging which log only success one
 outFile = fopen(sprintf("./ITTpercent_%d/LOG_Raw%d_VDrange%d_rho%d_MCS%d_%d_success.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT), 'a');
-% jihyun - for power control vehicles
-%ë¶ˆì•ˆ?•´?„œ... ?›?ž˜??ë¡? ?‹¤ ???ž¥?•˜?Š”ê±?!
+% jihyun - for total Logging
 outFile3 = fopen(sprintf("./ITTpercent_%d/LOG_Raw%d_VDrange%d_rho%d_MCS%d_%d_total.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT), 'a');
+
+% jihyun - for power Logging
+outFile4 = fopen(sprintf("./ITTpercent_%d/LOG_Raw%d_VDrange%d_rho%d_MCS%d_%d_success_power.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT), 'a');
+outFile5 = fopen(sprintf("./ITTpercent_%d/LOG_Raw%d_VDrange%d_rho%d_MCS%d_%d_total_power.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT), 'a');
+
+% jihyun - for rate Logging
+outFile6 = fopen(sprintf("./ITTpercent_%d/LOG_Raw%d_VDrange%d_rho%d_MCS%d_%d_success_rate.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT), 'a');
+outFile7 = fopen(sprintf("./ITTpercent_%d/LOG_Raw%d_VDrange%d_rho%d_MCS%d_%d_total_rate.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT), 'a');
 
 
 % circle shift
@@ -99,6 +108,23 @@ for i = 1:Nv
                             numOfRx(distanceOfTwo) = numOfRx(distanceOfTwo) + 1;
                             numOfTx(distanceOfTwo) = numOfTx(distanceOfTwo) + 1;
                             
+                            %for rate control Tx vehicle
+                            if i>powerVehicle
+                                RatesumOfUpdateDelayForDistance(distanceOfTwo)...
+                                    = RatesumOfUpdateDelayForDistance(distanceOfTwo) + updateDelay;
+                                RatenumOfUpdateForDistance(distanceOfTwo) = RatenumOfUpdateForDistance(distanceOfTwo) + 1;
+                                % PRR
+                                RatenumOfRx(distanceOfTwo) = RatenumOfRx(distanceOfTwo) + 1;
+                                RatenumOfTx(distanceOfTwo) = RatenumOfTx(distanceOfTwo) + 1;
+                                %for power control Tx vehicle
+                            else
+                                PowersumOfUpdateDelayForDistance(distanceOfTwo)...
+                                    = PowersumOfUpdateDelayForDistance(distanceOfTwo) + updateDelay;
+                                PowernumOfUpdateForDistance(distanceOfTwo) = PowernumOfUpdateForDistance(distanceOfTwo) + 1;
+                                % PRR
+                                PowernumOfRx(distanceOfTwo) = PowernumOfRx(distanceOfTwo) + 1;
+                                PowernumOfTx(distanceOfTwo) = PowernumOfTx(distanceOfTwo) + 1;
+                            end
                             % SLT
                             % ?–´ì°¨í”¼ ?‹¤ ?•©ì³ì„œ ?‰ê· ì´?‹ˆê¹?.. numOfRxë¡? ?•´ë²„ë¦¬?Ÿˆ.. ë¶„ëª¨ë§? ë¹ ì??Š” ê²©ì´ì§?...
                             % ê·¸ëŸ¬ë©? ?•ˆ ?  ?ˆ˜?„.. Rx ê¸°ì??œ¼ë¡? all node-pair ?— ???•˜?—¬ ?‰ê·?..
@@ -117,33 +143,23 @@ for i = 1:Nv
                             fprintf(outFile, '%d\t%d\t%f\t%f\t%d\t%f\t1\t%f\n', i, IDIn(j),  Xvehicle(i), Xvehicle(IDIn(j)), (distanceOfTwo - 1)*10, currentTimeStamp, updateDelay);
                             fprintf(outFile3, '%d\t%d\t%f\t%f\t%d\t%f\t1\t%f\n', i, IDIn(j),  Xvehicle(i), Xvehicle(IDIn(j)), (distanceOfTwo - 1)*10, currentTimeStamp, updateDelay);
                             
+                            if i > powerVehicle
+                            % this for rate control(6-success, 7-total)
+                                fprintf(outFile6, '%d\t%d\t%f\t%f\t%d\t%f\t1\t%f\n', i, IDIn(j),  Xvehicle(i), Xvehicle(IDIn(j)), (distanceOfTwo - 1)*10, currentTimeStamp, updateDelay);
+                                fprintf(outFile7, '%d\t%d\t%f\t%f\t%d\t%f\t1\t%f\n', i, IDIn(j),  Xvehicle(i), Xvehicle(IDIn(j)), (distanceOfTwo - 1)*10, currentTimeStamp, updateDelay); 
+                            else
+                                % this is for power control(4-success, 5-total)
+                                fprintf(outFile4, '%d\t%d\t%f\t%f\t%d\t%f\t1\t%f\n', i, IDIn(j),  Xvehicle(i), Xvehicle(IDIn(j)), (distanceOfTwo - 1)*10, currentTimeStamp, updateDelay);
+                                fprintf(outFile5, '%d\t%d\t%f\t%f\t%d\t%f\t1\t%f\n', i, IDIn(j),  Xvehicle(i), Xvehicle(IDIn(j)), (distanceOfTwo - 1)*10, currentTimeStamp, updateDelay); 
+                            end
+                            
                             % end
                         end
-                        % end
-                        
-                        
-                        
-                        %                     % Check if the update delay is larger than the maximum delay value stored in the array
-                        %                     if updateDelay>=delayMax
-                        %                         % Increment last counter
-                        %                         updateDelayCounter(end) = updateDelayCounter(end) + 1;
-                        %                     else
-                        %                         % Increment counter corresponding to the current delay
-                        %                         updateDelayCounter(ceil(updateDelay/delayResolution)) = ...
-                        %                             updateDelayCounter(ceil(updateDelay/delayResolution)) + 1;
-                        %                     end
-                        %                 end
+
                     end
                     % Update updateTimeMatrix with the current timestamp
                     updateTimeMatrix(IDvehicle(i),IDIn(j)) = currentTimeStamp;
-                    
-                    % yeomyung
-                    %             if distance(IDvehicle(i),IDIn(j))<100
-                    %                 neighborCountBasedBSM(i) = neighborCountBasedBSM(i) + 1;
-                    %             end
-%                 end
-                
-                % error?Š” IA ê³„ì‚°?—ë§? ?•„?š” - 30ì´? ?´?›„?— ?ƒ˜?”Œë§?
+
 %             elseif mod(i,inverseOfSampleRate)==0  && ~isempty(find(errorMatrix(:,1)==IDvehicle(i) & errorMatrix(:,2)==IDIn(j), 1))
             elseif ~isempty(find(errorMatrix(:,1)==IDvehicle(i) & errorMatrix(:,2)==IDIn(j), 1))
 
@@ -156,6 +172,13 @@ for i = 1:Nv
                     %                     if printLOG
                     % LOG (failure) - 1)Rx  2)Tx  3)Rx-Tx ê°? distance  4)currentTimestamp  5)transmission success: 1, fail: 0
                     fprintf(outFile3, '%d\t%d\t%f\t%f\t%d\t%f\t0\t0\n', i, awarenessID(i,j), Xvehicle(i), Xvehicle(awarenessID(i,j)), (distanceOfTwo - 1)*10, updateTimeMatrix(IDvehicle(i),IDIn(j)));
+                    if i<= powerVehicle
+                        % for power total log
+                        fprintf(outFile5, '%d\t%d\t%f\t%f\t%d\t%f\t0\t0\n', i, awarenessID(i,j), Xvehicle(i), Xvehicle(awarenessID(i,j)), (distanceOfTwo - 1)*10, updateTimeMatrix(IDvehicle(i),IDIn(j)));
+                    else
+                        % for rate total log
+                        fprintf(outFile7, '%d\t%d\t%f\t%f\t%d\t%f\t0\t0\n', i, awarenessID(i,j), Xvehicle(i), Xvehicle(awarenessID(i,j)), (distanceOfTwo - 1)*10, updateTimeMatrix(IDvehicle(i),IDIn(j)));
+                    end
                     %                     if awarenessID(i,j)> endpoint
                     %                         % rate control ?•œ ?• ?“¤ ë¡œê·¸ ?‚¨ê¹?
                     %                         fprintf(outFile, '%d\t%d\t%f\t%f\t%d\t%f\t0\t0\n', i, awarenessID(i,j), Xvehicle(i), Xvehicle(awarenessID(i,j)), (distanceOfTwo - 1)*10, updateTimeMatrix(IDvehicle(i),IDIn(j)));
@@ -167,7 +190,14 @@ for i = 1:Nv
                     %                     end
                     
                     
-                    numOfTx(distanceOfTwo) = numOfTx(distanceOfTwo) + 1; % ?—?Ÿ¬ ?‚˜?™”?œ¼ë©? Txë§? count
+                    numOfTx(distanceOfTwo) = numOfTx(distanceOfTwo) + 1; %
+                    if i>powerVehicle
+                        %for rate control vehicle
+                        RatenumOfTx(distanceOfTwo) = RatenumOfTx(distanceOfTwo) + 1; %
+                    else
+                        %for power control vehicle
+                        PowernumOfTx(distanceOfTwo) = PowernumOfTx(distanceOfTwo) + 1; %
+                    end
                     %             end
                     % end
                 end
@@ -181,6 +211,10 @@ end
 % if printLOG
 fclose(outFile);
 fclose(outFile3);
+fclose(outFile4);
+fclose(outFile5);
+fclose(outFile6);
+fclose(outFile7);
 
 
 % end

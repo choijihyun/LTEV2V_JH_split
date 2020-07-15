@@ -1,4 +1,4 @@
-function [BRid, BRpassCounter, BRidAfterPass, BRidFake, timeNextPacket, ITT] = computeBRforNext(simValues, phyParams, currentCBP, snap, rho, smoothingFactorForITT, ITTpercent, printLOG, slopeDefault, ITT, ITT_x, ITT_y,BRid, BRpassCounter, BRidAfterPass, timeNextPacket, elapsedTime, simParams, appParams, BRidFake)
+function [BRid, BRpassCounter, BRidAfterPass, BRidFake, timeNextPacket, ITT] = computeBRforNext(simValues, phyParams, currentCBP, snap, rho, smoothingFactorForITT, ITTpercent, printLOG, slopeDefault, ITT, ITT_x, ITT_y,BRid, BRpassCounter, BRidAfterPass, timeNextPacket, elapsedTime, simParams, appParams, BRidFake, powerVehicle)
 % jihyun
 % calculate ITT by CBP
 % and use BRafterPass and BRpassCounter
@@ -6,10 +6,10 @@ function [BRid, BRpassCounter, BRidAfterPass, BRidFake, timeNextPacket, ITT] = c
 slope = slopeDefault;
 yIntercept = ITT_x - slope * 0.5;
 
-for  i = 1 :length(timeNextPacket)
+for  i = powerVehicle+1 :length(timeNextPacket)
     eachCBP = currentCBP(i);
     
-    if BRpassCounter(i) == 0 && BRid(i) > 0     
+    if BRpassCounter(i) == 0 && BRid(i) > 0
         % 이번 snap에 쏜 차량들
         if eachCBP <= phyParams.minChanUtil
             ITT(i) = ITT_x;
@@ -28,14 +28,7 @@ for  i = 1 :length(timeNextPacket)
             
             BRid(i) = -2;
             
-        else 
-            % 0.1단위로 전송할 수 있도록(안그러면 자원 위치가 바ㄱ뀌는데 그러면 당연히 충돌나겠지)
-%             ITT(i) = round((slope * eachCBP + yIntercept), 1); 
-%             BRpassCounter(i) = round(ITT(i)*10);
-%             BRidAfterPass(i) = BRid(i);
-%             BRidFake(i) = BRid(i);
-%             BRid(i) = -2;
-            
+        else
             ITT(i) = round((slope * eachCBP + yIntercept), 3);
             BRpassCounter(i) = floor(ITT(i)/appParams.Tbeacon);  % after the value of BRpassCounter snap is pass
             
@@ -45,20 +38,17 @@ for  i = 1 :length(timeNextPacket)
             if (BRid(i)<=appParams.Nbeacons/2 && BRidAfterPass(i) > appParams.Nbeacons/2)...
                     || (BRid(i)<=appParams.Nbeacons && BRidAfterPass(i) > appParams.Nbeacons)     % 원래 오른쪽 끝에 있어서 한 턴 더 넘어가게 되는 경우
                 BRpassCounter(i) = BRpassCounter(i) + 1;
-                BRidAfterPass(i) = BRidAfterPass(i) - appParams.Nbeacons/2;   
+                BRidAfterPass(i) = BRidAfterPass(i) - appParams.Nbeacons/2;
             end
             % jihyun - for maintain BRid in this snap
             BRidFake(i) = BRid(i);
             BRid(i) = -2;
-            
-        end 
+        end
         
         if timeNextPacket(i) < elapsedTime
             timeNextPacket(i) = timeNextPacket(i) + ITT(i); % using number of BR moved
         end
     end
-    
-
     
     if BRpassCounter(i) ~= 0
         %jihyun
@@ -74,9 +64,38 @@ for  i = 1 :length(timeNextPacket)
     end
 end
 
+for  i = 1 :powerVehicle
+    timeNextPacket(i) = timeNextPacket(i) + appParams.Tbeacon;
+end
+
 % print
 if ~simParams.printLOG
     [~, sortedXVehiclesIndex] = sort(simValues.XvehicleReal);
+    % rate control
+    outFile3 = fopen(sprintf("./ITTpercent_%d/ITTHistory_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_rate.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT),'a');
+    outFile4 = fopen(sprintf("./ITTpercent_%d/BRpassCounter_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_rate.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT),'a');
+    for  i = powerVehicle+1 :length(timeNextPacket)
+        fprintf(outFile3, '%f\t',  ITT(sortedXVehiclesIndex(i)));
+        fprintf(outFile4, '%d\t',  BRpassCounter(sortedXVehiclesIndex(i)));
+    end
+    fprintf(outFile3, '\n');
+    fprintf(outFile4, '\n');
+    fclose(outFile3);
+    fclose(outFile4);
+    
+    % power control
+    outFile3 = fopen(sprintf("./ITTpercent_%d/ITTHistory_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_power.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT),'a');
+    outFile4 = fopen(sprintf("./ITTpercent_%d/BRpassCounter_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_power.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT),'a');
+    for  i = 1 :powerVehicle
+        fprintf(outFile3, '%f\t',  ITT(sortedXVehiclesIndex(i)));
+        fprintf(outFile4, '%d\t',  BRpassCounter(sortedXVehiclesIndex(i)));
+    end
+    fprintf(outFile3, '\n');
+    fprintf(outFile4, '\n');
+    fclose(outFile3);
+    fclose(outFile4);
+    
+    %total
     outFile3 = fopen(sprintf("./ITTpercent_%d/ITTHistory_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT),'a');
     outFile4 = fopen(sprintf("./ITTpercent_%d/BRpassCounter_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT),'a');
     for  i = 1 :length(timeNextPacket)
