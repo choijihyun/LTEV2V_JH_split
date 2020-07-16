@@ -145,7 +145,7 @@ if ~printLOG
     [~, sortedXVehiclesIndex2] = sort(simValues.XvehicleReal(index));
     outFile = fopen(sprintf("./ITTpercent_%d/CBPHistory_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_power.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT),'a');
     for i = 1:powerVehicle
-        fprintf(outFile, '%f\t',  CBPMatrix(sortedXVehiclesIndex2(i),snap));
+        fprintf(outFile, '%f\t',  CBPMatrix(index(sortedXVehiclesIndex2(i)),snap));
     end
     fprintf(outFile, '\n');
     fclose(outFile);
@@ -161,8 +161,8 @@ if ~printLOG
     index2 = find(simValues.IDvehicle>powerVehicle);
     [~, sortedXVehiclesIndex3] = sort(simValues.XvehicleReal(index2));
     outFile = fopen(sprintf("./ITTpercent_%d/CBPHistory_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_rate.data", ITTpercent, Raw, rangeForVehicleDensity, rho, MCS, smoothingFactorForITT),'a');
-    for i = powerVehicle+1:length(CBPMatrix(:,snap))
-        fprintf(outFile, '%f\t',  CBPMatrix(sortedXVehiclesIndex3(i),snap));
+    for i = 1:rateVehicle
+        fprintf(outFile, '%f\t',  CBPMatrix(index2(sortedXVehiclesIndex3(i)),snap));
     end
     fprintf(outFile, '\n');
     fclose(outFile);

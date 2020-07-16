@@ -130,11 +130,11 @@ slopeDefault = (ITT_y - ITT_x) / (0.8 - 0.5);
 
 %% number of power control and rate control - jihyun
 % ratio of control 
-powerRatio = 0.5;
-rateRatio = 0.5;
+powerRatio = 0.7;
+rateRatio = 0.3;
 
 % each number of power control and rate control
-powerVehicle = simValues.maxID*powerRatio;
+powerVehicle = round(simValues.maxID*powerRatio);
 rateVehicle = simValues.maxID*rateRatio;
 
 
@@ -387,7 +387,7 @@ for snap = 1:simValues.snapshots
         timeNextPacket, elapsedTime, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent, simParams.printLOG, BRidFake, phyParams.IBEmatrix, phyParams.PnRB, TransmitFlag, distanceReal, totalUse, powerVehicle, rateVehicle);
     if simParams.powerControl
         % calculate only power vehicle's TxPower
-        phyParams = computeTransmissionPowerforNext(simValues, phyParams, simValues.CBPMatrix(:, snap), snap, simParams.rho, phyParams.smoothingFactorForITT, simParams.ITTpercent, simParams.printLOG, powerVehicle);
+        phyParams = computeTransmissionPowerforNext(simValues, phyParams, simValues.CBPMatrix(:, snap), snap, simParams.rho, phyParams.smoothingFactorForITT, simParams.ITTpercent, simParams.printLOG, powerVehicle, rateVehicle);
         
         %for calculate only for power control vehicle
         index = find(simValues.IDvehicle <= powerVehicle);
@@ -492,7 +492,7 @@ for snap = 1:simValues.snapshots
     
     %% Update time next packet and rate control
     if simParams.rateControl
-        [BRid, BRpassCounter, BRidAfterPass, BRidFake ,timeNextPacket, ITT] = computeBRforNext(simValues, phyParams, simValues.CBPMatrix(:, snap), snap, simParams.rho, phyParams.smoothingFactorForITT, simParams.ITTpercent, simParams.printLOG, slopeDefault, ITT, ITT_x, ITT_y, BRid, BRpassCounter, BRidAfterPass, timeNextPacket, elapsedTime, simParams, appParams, BRidFake, powerVehicle);
+        [BRid, BRpassCounter, BRidAfterPass, BRidFake ,timeNextPacket, ITT] = computeBRforNext(simValues, phyParams, simValues.CBPMatrix(:, snap), snap, simParams.rho, phyParams.smoothingFactorForITT, simParams.ITTpercent, simParams.printLOG, slopeDefault, ITT, ITT_x, ITT_y, BRid, BRpassCounter, BRidAfterPass, timeNextPacket, elapsedTime, simParams, appParams, BRidFake, powerVehicle, rateVehicle);
     else
         % for only PowerControl - which is exactly moved 0.1
 %         timeNextPacket = timeNextPacket + appParams.Tbeacon;

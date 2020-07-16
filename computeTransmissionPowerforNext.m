@@ -1,4 +1,4 @@
-function phyParams = computeTransmissionPowerforNext(simValues, phyParams, currentCBP, snap, rho, smoothingFactorForITT, ITTpercent, printLOG, powerVehicle)
+function phyParams = computeTransmissionPowerforNext(simValues, phyParams, currentCBP, snap, rho, smoothingFactorForITT, ITTpercent, printLOG, powerVehicle, rateVehicle)
 
 % yeomyung
 % function for Power Control
@@ -40,7 +40,7 @@ if ~printLOG
     [~, sortedXVehiclesIndex] = sort(simValues.XvehicleReal(index));
     outFile2 = fopen(sprintf("./ITTpercent_%d/TxPowerHistory_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_power.data", ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, rho, phyParams.MCS, smoothingFactorForITT),'a');
     for i = 1:powerVehicle
-        fprintf(outFile2, '%d\t', phyParams.Ptx_dBm_RB(sortedXVehiclesIndex(i)));
+        fprintf(outFile2, '%d\t', phyParams.Ptx_dBm_RB(index(sortedXVehiclesIndex(i))));
     end
     fprintf(outFile2, '\n');
     fclose(outFile2);
@@ -59,8 +59,8 @@ if ~printLOG
     index2 = find(simValues.IDvehicle>powerVehicle);
     [~, sortedXVehiclesIndex2] = sort(simValues.XvehicleReal(index2));
     outFile2 = fopen(sprintf("./ITTpercent_%d/TxPowerHistory_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_rate.data", ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, rho, phyParams.MCS, smoothingFactorForITT),'a');
-    for i = powerVehicle+1:length(phyParams.Ptx_dBm_RB)
-        fprintf(outFile2, '%d\t', phyParams.Ptx_dBm_RB(sortedXVehiclesIndex2(i)));
+    for i = 1:rateVehicle
+        fprintf(outFile2, '%d\t', phyParams.Ptx_dBm_RB(index2(sortedXVehiclesIndex2(i))));
     end
     fprintf(outFile2, '\n');
     fclose(outFile2);

@@ -1,4 +1,4 @@
-function [BRid, BRpassCounter, BRidAfterPass, BRidFake, timeNextPacket, ITT] = computeBRforNext(simValues, phyParams, currentCBP, snap, rho, smoothingFactorForITT, ITTpercent, printLOG, slopeDefault, ITT, ITT_x, ITT_y,BRid, BRpassCounter, BRidAfterPass, timeNextPacket, elapsedTime, simParams, appParams, BRidFake, powerVehicle)
+function [BRid, BRpassCounter, BRidAfterPass, BRidFake, timeNextPacket, ITT] = computeBRforNext(simValues, phyParams, currentCBP, snap, rho, smoothingFactorForITT, ITTpercent, printLOG, slopeDefault, ITT, ITT_x, ITT_y,BRid, BRpassCounter, BRidAfterPass, timeNextPacket, elapsedTime, simParams, appParams, BRidFake, powerVehicle, rateVehicle)
 % jihyun
 % calculate ITT by CBP
 % and use BRafterPass and BRpassCounter
@@ -97,9 +97,9 @@ if ~simParams.printLOG
     [~, sortedXVehiclesIndex] = sort(simValues.XvehicleReal(index));
     outFile3 = fopen(sprintf("./ITTpercent_%d/ITTHistory_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_rate.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT),'a');
     outFile4 = fopen(sprintf("./ITTpercent_%d/BRpassCounter_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_rate.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT),'a');
-    for  i = powerVehicle+1 :length(timeNextPacket)
-        fprintf(outFile3, '%f\t',  ITT(sortedXVehiclesIndex(i)));
-        fprintf(outFile4, '%d\t',  BRpassCounter(sortedXVehiclesIndex(i)));
+    for  i = 1 : rateVehicle
+        fprintf(outFile3, '%f\t',  ITT(index(sortedXVehiclesIndex(i))));
+        fprintf(outFile4, '%d\t',  BRpassCounter(index(sortedXVehiclesIndex(i))));
     end
     fprintf(outFile3, '\n');
     fprintf(outFile4, '\n');
@@ -112,8 +112,8 @@ if ~simParams.printLOG
     outFile3 = fopen(sprintf("./ITTpercent_%d/ITTHistory_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_power.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT),'a');
     outFile4 = fopen(sprintf("./ITTpercent_%d/BRpassCounter_Sort_Raw%d_VDrange%d_rho%d_MCS%d_%d_power.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT),'a');
     for  i = 1 :powerVehicle
-        fprintf(outFile3, '%f\t',  ITT(sortedXVehiclesIndex(i)));
-        fprintf(outFile4, '%d\t',  BRpassCounter(sortedXVehiclesIndex(i)));
+        fprintf(outFile3, '%f\t',  ITT(index2(sortedXVehiclesIndex(i))));
+        fprintf(outFile4, '%d\t',  BRpassCounter(index2(sortedXVehiclesIndex(i))));
     end
     fprintf(outFile3, '\n');
     fprintf(outFile4, '\n');
