@@ -32,6 +32,13 @@ if appParams.resourcesV2V<=0 || appParams.resourcesV2V>100
 end
 
 
+% [power/rate ratio]
+% Resource allocated to V2V (%)
+appParams = addNewParam(appParams,'ratio',10,'Ratio of power and rate','integer',fileCfg,varargin{1}{1});
+if appParams.ratio<=0 || appParams.ratio>10
+    error('Error in the setting of "appParams.resourcesV2V". Not within 1-100%.');
+end
+
 fprintf('\n');
 % 
 %%%%%%%%%

@@ -2,7 +2,7 @@ function [simParams,simValues] = initVehiclePositions(simParams,appParams)
 % Function to initialize the positions of vehicles
 
 %seed ?„¤? •
-rng(5);
+rng(10);
 
 if ~simParams.fileTrace
     

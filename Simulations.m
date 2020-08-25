@@ -23,12 +23,18 @@ B = 300;
 
 %% LTE Autonomous (3GPP Mode 4)
 % Autonomous allocation algorithm defined in 3GPP standard
-density = [150,300, 450, 600, 750];
-for i=1:length(density)
-LTEV2Vsim('BenchmarkPoisson.cfg','simulationTime',40,'BRAlgorithm',8,'printLOG', false,'ITTpercent', 100,...
-    'Raw',475,'rangeForVehicleDensity', 100, 'MCS', 7, 'rho', density(i) ,'smoothingFactorForITT', 1.0,...                   % 100
-    'beaconSizeBytes',300, 'powerControl', false, 'rateControl', true, 'Mborder', 0,...
-    'printUpdateDelay', true, 'roadLength', 1800, 'maxPtx_dBm',23, 'minPtx_dBm',5);
+density = [150, 300, 450, 600, 750];
+% density = [450];
+ratio = [3,5,7];
+% ratio = [7];
+
+for j=1:length(ratio)
+    for i=1:length(density)
+        LTEV2Vsim('BenchmarkPoisson.cfg','simulationTime',40,'BRAlgorithm',8,'printLOG', false,'ITTpercent', 100,...
+            'Raw',475,'rangeForVehicleDensity', 100, 'MCS', 7, 'rho', density(i) ,'smoothingFactorForITT', 1.0,...                   % 100
+            'beaconSizeBytes',300, 'powerControl', true, 'rateControl', true, 'Mborder', 0,...
+            'printUpdateDelay', true, 'roadLength', 1800, 'maxPtx_dBm',23, 'minPtx_dBm',3, 'ratio', ratio(j));
+    end
 end
 
 % LTEV2Vsim('BenchmarkPoisson.cfg','simulationTime',50,'BRAlgorithm',8,'printLOG', false,'ITTpercent', 100,...

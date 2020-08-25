@@ -138,12 +138,12 @@ slopeDefault = (ITT_y - ITT_x) / (0.8 - 0.5);
 
 %% number of power control and rate control - jihyun
 % ratio of control 
-powerRatio = 0.3;
-rateRatio = 0.7;
+powerRatio = appParams.ratio * 0.1;
+rateRatio = 1-powerRatio;
 
 % each number of power control and rate control
 powerVehicle = round(simValues.maxID*powerRatio);
-rateVehicle = simValues.maxID*rateRatio;
+rateVehicle = round(simValues.maxID*rateRatio);
 
 
 %% BRreassignment by BRAlgorithm
@@ -392,10 +392,11 @@ for snap = 1:simValues.snapshots
         neighborsID, allNeighborsID, BRid, snap, simValues.RXpowerSum, CBPThresh, appParams,...
         simValues.RXpowerHist,...
         appParams.Nbeacons, appParams.NbeaconsF, simParams.CBRRange,...
-        timeNextPacket, elapsedTime, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent, simParams.printLOG, BRidFake, phyParams.IBEmatrix, phyParams.PnRB, TransmitFlag, distanceReal, totalUse, powerVehicle, rateVehicle);
+        timeNextPacket, elapsedTime, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent, ...
+        simParams.printLOG, BRidFake, phyParams.IBEmatrix, phyParams.PnRB, TransmitFlag, distanceReal, totalUse, powerVehicle, rateVehicle, appParams.ratio);
     if simParams.powerControl
         % calculate only power vehicle's TxPower
-        phyParams = computeTransmissionPowerforNext(simValues, phyParams, simValues.CBPMatrix(:, snap), snap, simParams.rho, phyParams.smoothingFactorForITT, simParams.ITTpercent, simParams.printLOG, powerVehicle, rateVehicle);
+        phyParams = computeTransmissionPowerforNext(simValues, phyParams, simValues.CBPMatrix(:, snap), snap, simParams.rho, phyParams.smoothingFactorForITT, simParams.ITTpercent, simParams.printLOG, powerVehicle, rateVehicle, appParams.ratio);
         
         %for calculate only for power control vehicle
         index = find(simValues.IDvehicle <= powerVehicle);
@@ -462,14 +463,14 @@ for snap = 1:simValues.snapshots
     %         [simValues.updateTimeMatrix,outputValues.updateDelayCounter] = countUpdateDelay(simValues.IDvehicle,BRid,appParams.NbeaconsT,awarenessID,errorMatrix,elapsedTime,simValues.updateTimeMatrix,outputValues.updateDelayCounter,outParams.delayResolution);
     %     end
     if outParams.printUpdateDelay
-        if elapsedTime >= 30.0
+        if elapsedTime >= 50.0
             [simValues.updateTimeMatrix,outputValues.updateDelayCounter, sumOfUpdateDelayForDistance, numOfUpdateForDistance, numOfTx, numOfRx, windowForUniqueVehicle,...
                 RatenumOfTx, RatenumOfRx, PowernumOfTx, PowernumOfRx, RatesumOfUpdateDelayForDistance, RatenumOfUpdateForDistance, PowersumOfUpdateDelayForDistance, PowernumOfUpdateForDistance,...
                 tmpRatenumOfTx, tmpRatenumOfRx, tmpPowernumOfTx, tmpPowernumOfRx, tmpRatesumOfUpdateDelayForDistance, tmpRatenumOfUpdateForDistance, tmpPowersumOfUpdateDelayForDistance, tmpPowernumOfUpdateForDistance]...
                 = countUpdateDelay(simValues.IDvehicle,BRid,appParams.NbeaconsT,awarenessID,errorMatrix,elapsedTime,simValues.updateTimeMatrix,outputValues.updateDelayCounter,outParams.delayResolution, ...
                 sumOfUpdateDelayForDistance, numOfUpdateForDistance, numOfTx, numOfRx, simValues.Xvehicle, simValues.Yvehicle, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.printLOG, simParams.ITTpercent, windowForUniqueVehicle, powerVehicle, ...
                 RatenumOfTx, RatenumOfRx, PowernumOfTx, PowernumOfRx, RatesumOfUpdateDelayForDistance, RatenumOfUpdateForDistance, PowersumOfUpdateDelayForDistance, PowernumOfUpdateForDistance, ...
-                tmpRatenumOfTx, tmpRatenumOfRx, tmpPowernumOfTx, tmpPowernumOfRx, tmpRatesumOfUpdateDelayForDistance, tmpRatenumOfUpdateForDistance, tmpPowersumOfUpdateDelayForDistance, tmpPowernumOfUpdateForDistance);
+                tmpRatenumOfTx, tmpRatenumOfRx, tmpPowernumOfTx, tmpPowernumOfRx, tmpRatesumOfUpdateDelayForDistance, tmpRatenumOfUpdateForDistance, tmpPowersumOfUpdateDelayForDistance, tmpPowernumOfUpdateForDistance, appParams.ratio);
         end
     end
     
@@ -502,7 +503,7 @@ for snap = 1:simValues.snapshots
     
     %% Update time next packet and rate control
     if simParams.rateControl
-        [BRid, BRpassCounter, BRidAfterPass, BRidFake ,timeNextPacket, ITT] = computeBRforNext(simValues, phyParams, simValues.CBPMatrix(:, snap), snap, simParams.rho, phyParams.smoothingFactorForITT, simParams.ITTpercent, simParams.printLOG, slopeDefault, ITT, ITT_x, ITT_y, BRid, BRpassCounter, BRidAfterPass, timeNextPacket, elapsedTime, simParams, appParams, BRidFake, powerVehicle, rateVehicle);
+        [BRid, BRpassCounter, BRidAfterPass, BRidFake ,timeNextPacket, ITT] = computeBRforNext(simValues, phyParams, simValues.CBPMatrix(:, snap), snap, simParams.rho, phyParams.smoothingFactorForITT, simParams.ITTpercent, simParams.printLOG, slopeDefault, ITT, ITT_x, ITT_y, BRid, BRpassCounter, BRidAfterPass, timeNextPacket, elapsedTime, simParams, appParams, BRidFake, powerVehicle, rateVehicle, appParams.ratio);
     else
         % for only PowerControl - which is exactly moved 0.1
 %         timeNextPacket = timeNextPacket + appParams.Tbeacon;
@@ -613,7 +614,7 @@ for snap = 1:simValues.snapshots
     if ~simParams.printLOG
         %Information Age
         UpdateDelayForDistance = sumOfUpdateDelayForDistance ./ numOfUpdateForDistance;
-        outFile = fopen(sprintf("./ITTpercent_%d/IA_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
+        outFile = fopen(sprintf("./ITTpercent_%d/new_%d/IA_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, appParams.ratio, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
         for i = 1:length(UpdateDelayForDistance)
             fprintf(outFile, '%f\t',  UpdateDelayForDistance(i));
         end
@@ -622,7 +623,7 @@ for snap = 1:simValues.snapshots
         
         %rate information age
         RateUpdateDelayForDistance = RatesumOfUpdateDelayForDistance ./ RatenumOfUpdateForDistance;
-        outFile = fopen(sprintf("./ITTpercent_%d/IA_Rate_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
+        outFile = fopen(sprintf("./ITTpercent_%d/new_%d/IA_Rate_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, appParams.ratio,phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
         for i = 1:length(RateUpdateDelayForDistance)
             fprintf(outFile, '%f\t',  RateUpdateDelayForDistance(i));
         end
@@ -631,7 +632,7 @@ for snap = 1:simValues.snapshots
         
         %tmp rate information age
         tmpRateUpdateDelayForDistance = tmpRatesumOfUpdateDelayForDistance ./ tmpRatenumOfUpdateForDistance;
-        outFile = fopen(sprintf("./ITTpercent_%d/IA_Rate_tmp_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
+        outFile = fopen(sprintf("./ITTpercent_%d/new_%d/IA_Rate_tmp_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, appParams.ratio, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
         for i = 1:length(tmpRateUpdateDelayForDistance)
             fprintf(outFile, '%f\t',  tmpRateUpdateDelayForDistance(i));
         end
@@ -640,7 +641,7 @@ for snap = 1:simValues.snapshots
         
         %power information age
         PowerUpdateDelayForDistance = PowersumOfUpdateDelayForDistance ./ PowernumOfUpdateForDistance;
-        outFile = fopen(sprintf("./ITTpercent_%d/IA_Power_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
+        outFile = fopen(sprintf("./ITTpercent_%d/new_%d/IA_Power_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, appParams.ratio, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
         for i = 1:length(PowerUpdateDelayForDistance)
             fprintf(outFile, '%f\t',  PowerUpdateDelayForDistance(i));
         end
@@ -649,7 +650,7 @@ for snap = 1:simValues.snapshots
         
         %tmp power information age
         tmpPowerUpdateDelayForDistance = tmpPowersumOfUpdateDelayForDistance ./ tmpPowernumOfUpdateForDistance;
-        outFile = fopen(sprintf("./ITTpercent_%d/IA_Power_tmp_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
+        outFile = fopen(sprintf("./ITTpercent_%d/new_%d/IA_Power_tmp_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, appParams.ratio, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
         for i = 1:length(tmpPowerUpdateDelayForDistance)
             fprintf(outFile, '%f\t',  tmpPowerUpdateDelayForDistance(i));
         end
@@ -659,7 +660,7 @@ for snap = 1:simValues.snapshots
         
         % PRR
         PRRForDistance = numOfRx ./ numOfTx;
-        outFile = fopen(sprintf("./ITTpercent_%d/PRR_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
+        outFile = fopen(sprintf("./ITTpercent_%d/new_%d/PRR_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, appParams.ratio, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
         for i = 1:length(PRRForDistance)
             fprintf(outFile, '%f\t',  PRRForDistance(i));
         end
@@ -668,7 +669,7 @@ for snap = 1:simValues.snapshots
         
         % rate PRR
         RatePRRForDistance = RatenumOfRx ./ RatenumOfTx;
-        outFile = fopen(sprintf("./ITTpercent_%d/PRR_Rate_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
+        outFile = fopen(sprintf("./ITTpercent_%d/new_%d/PRR_Rate_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, appParams.ratio, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
         for i = 1:length(RatePRRForDistance)
             fprintf(outFile, '%f\t',  RatePRRForDistance(i));
         end
@@ -677,7 +678,7 @@ for snap = 1:simValues.snapshots
         
         % tmp rate PRR
         tmpRatePRRForDistance = tmpRatenumOfRx ./ tmpRatenumOfTx;
-        outFile = fopen(sprintf("./ITTpercent_%d/PRR_Rate_tmp_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
+        outFile = fopen(sprintf("./ITTpercent_%d/new_%d/PRR_Rate_tmp_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, appParams.ratio, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
         for i = 1:length(tmpRatePRRForDistance)
             fprintf(outFile, '%f\t',  tmpRatePRRForDistance(i));
         end
@@ -686,7 +687,7 @@ for snap = 1:simValues.snapshots
         
         % power PRR
         PowerPRRForDistance = PowernumOfRx ./ PowernumOfTx;
-        outFile = fopen(sprintf("./ITTpercent_%d/PRR_Power_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
+        outFile = fopen(sprintf("./ITTpercent_%d/new_%d/PRR_Power_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, appParams.ratio, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
         for i = 1:length(PowerPRRForDistance)
             fprintf(outFile, '%f\t',  PowerPRRForDistance(i));
         end
@@ -695,7 +696,7 @@ for snap = 1:simValues.snapshots
         
         % tmp power PRR
         tmpPowerPRRForDistance = tmpPowernumOfRx ./ tmpPowernumOfTx;
-        outFile = fopen(sprintf("./ITTpercent_%d/PRR_Power_tmp_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
+        outFile = fopen(sprintf("./ITTpercent_%d/new_%d/PRR_Power_tmp_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, appParams.ratio, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
         for i = 1:length(tmpPowerPRRForDistance)
             fprintf(outFile, '%f\t',  tmpPowerPRRForDistance(i));
         end
@@ -703,21 +704,21 @@ for snap = 1:simValues.snapshots
         fclose(outFile);
         
         %Xvehicle - location of each vehicle
-        outFile = fopen(sprintf("./ITTpercent_%d/XvehicleReal_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
+        outFile = fopen(sprintf("./ITTpercent_%d/new_%d/XvehicleReal_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, appParams.ratio, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
         for i = 1:length(XvehicleRealOld)
             fprintf(outFile, '%f\t',  simValues.XvehicleReal(i));
         end
         fprintf(outFile, '\n');
         fclose(outFile);
                 
-        outFile = fopen(sprintf("./ITTpercent_%d/resReselectionCounter_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
+        outFile = fopen(sprintf("./ITTpercent_%d/new_%d/resReselectionCounter_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, appParams.ratio, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
         for i = 1:length(XvehicleRealOld)
             fprintf(outFile, '%d\t',  resReselectionCounter(i));
         end
         fprintf(outFile, '\n');
         fclose(outFile);
         
-        outFile = fopen(sprintf("./ITTpercent_%d/BRidFake_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
+        outFile = fopen(sprintf("./ITTpercent_%d/new_%d/BRidFake_Raw%d_VDrange%d_rho%d_MCS%d_%f_ITTpercent_%d.data", simParams.ITTpercent, appParams.ratio, phyParams.Raw, phyParams.rangeForVehicleDensity, simParams.rho, phyParams.MCS, phyParams.smoothingFactorForITT, simParams.ITTpercent), 'a');
         for i = 1:length(XvehicleRealOld)
             fprintf(outFile, '%d\t',  BRidFake(i));
         end

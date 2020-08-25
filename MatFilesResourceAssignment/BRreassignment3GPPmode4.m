@@ -248,6 +248,7 @@ for iV = 1:Nscheduled
     % whereas simParams.powerThresholdMode4 is on a resource element basis,
     % thus a conversion is required (recall: 12 subcarriers per RB)
     % powerThresholdMode4=-110dBm, RBsBeacon = 40
+    %%%%%%%%%%%% powerThresholdMode4 subframe 하나 단위$%%%%%%%%%%%%%%%%%
     powerThreshold = simParams.powerThresholdMode4 * (12*appParams.RBsBeacon);
     % The cycle is stopped internally; a max of 100 is used to avoid
     % infinite loops in case of bugs
